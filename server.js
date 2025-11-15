@@ -6,6 +6,11 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
+const cors = require("cors");
+app.use(cors({
+  origin: "https://neon-pony-9eec39.netlify.app"
+}));
+
 //Create a single shared DB connection
 const db = await mysql.createConnection({
   host: '136.114.242.18',
