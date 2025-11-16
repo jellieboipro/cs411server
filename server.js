@@ -1,17 +1,22 @@
 import express from 'express';
 import mysql from 'mysql2/promise';
-import cors from 'cors';
 
 const app = express();
 app.use(express.json());
-app.use(cors());
 
-const cors = require("cors");
-app.use(cors({
-  origin: "https://neon-pony-9eec39.netlify.app"
-}));
 
-//Create a single shared DB connection
+const pool = mysql.createPool({
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+
+  //cloud run unix socket to gcp sql
+  socketPath: `/cloudsql/cs411-475919:us-central1:db-fa25`
+});
+
+export default pool;
+
+//create the DB connection
 const db = await mysql.createConnection({
   host: '136.114.242.18',
   user: 'root',
@@ -20,7 +25,7 @@ const db = await mysql.createConnection({
   ssl: { rejectUnauthorized: false }
 });
 
-//Fetch all tables
+//fetch all tables
 app.get('/tables', async (req, res) => {
   try {
     const [results] = await db.query('SHOW TABLES');
@@ -32,7 +37,7 @@ app.get('/tables', async (req, res) => {
   }
 });
 
-//Fetch specific table data
+//fetch specific table data
 app.get('/table/:name', async (req, res) => {
   const tableName = req.params.name;
   try {
@@ -91,7 +96,7 @@ app.post('/logs', async (req, res) => {
     DistanceKM
   } = req.body;
 
-  // Basic validation
+  // validation
   if (!UserId || !WildlifeId || !Latitude || !Longitude) {
     return res.status(400).json({ error: "Missing required fields." });
   }
@@ -130,4 +135,5 @@ app.post('/logs', async (req, res) => {
   }
 });
 
-app.listen(3001, () => console.log('Server running on port 3001'));
+// app.listen(3001, () => console.log('Server running on port 3001')); localhost 
+app.listen(process.env.PORT || 8080); // cloud run
